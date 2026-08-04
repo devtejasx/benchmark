@@ -87,7 +87,7 @@ BENCHMARK(BM_WithPauseResume);
 
 ADD_CASES(TC_JSONOut, {{"\"name\": \"BM_WithPauseResume\",$"}});
 
-static void CheckSimple(Results const& e) {
+void CheckSimple(Results const& e) {
   CHECK_COUNTER_VALUE(e, double, kGenericPerfEvent1, GT, 0);
 }
 

@@ -11,7 +11,11 @@ Checks: >
   -clang-analyzer-deadcode*,
   -clang-analyzer-optin*,
   -readability-identifier-length
-WarningsAsErrors: ''
+# Checks that are clean across the tree and are enforced, so they cannot
+# regress. Move a check here once its findings are fixed.
+WarningsAsErrors: >
+  misc-use-anonymous-namespace,
+  readability-static-definition-in-anonymous-namespace
 HeaderFilterRegex: ''
 FormatStyle:     none
 CheckOptions:

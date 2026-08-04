@@ -12,26 +12,27 @@
 // for each benchmark run (single-threaded).
 namespace {
 namespace singlethreaded {
-static int setup_call = 0;
-static int teardown_call = 0;
+int setup_call = 0;
+int teardown_call = 0;
 }  // namespace singlethreaded
-}  // namespace
-static void DoSetup1(const benchmark::State& state) {
+
+void DoSetup1(const benchmark::State& state) {
   ++singlethreaded::setup_call;
 
   // Setup/Teardown should never be called with any thread_idx != 0.
   assert(state.thread_index() == 0);
 }
 
-static void DoTeardown1(const benchmark::State& state) {
+void DoTeardown1(const benchmark::State& state) {
   ++singlethreaded::teardown_call;
   assert(state.thread_index() == 0);
 }
 
-static void BM_with_setup(benchmark::State& state) {
+void BM_with_setup(benchmark::State& state) {
   for (auto s : state) {
   }
 }
+}  // namespace
 BENCHMARK(BM_with_setup)
     ->Arg(1)
     ->Arg(3)
@@ -44,9 +45,9 @@ BENCHMARK(BM_with_setup)
 // Test that Setup() and Teardown() are called once for each group of threads.
 namespace {
 namespace concurrent {
-static std::atomic<int> setup_call(0);
-static std::atomic<int> teardown_call(0);
-static std::atomic<int> func_call(0);
+std::atomic<int> setup_call(0);
+std::atomic<int> teardown_call(0);
+std::atomic<int> func_call(0);
 }  // namespace concurrent
 
 void DoSetup2(const benchmark::State& state) {

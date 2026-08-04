@@ -12,7 +12,10 @@ using benchmark::RegisterBenchmark;
 using benchmark::RunSpecifiedBenchmarks;
 using benchmark::State;
 
-static int functor_called = 0;
+namespace {
+int functor_called = 0;
+}  // namespace
+
 struct Functor {
   void operator()(const benchmark::State& /*unused*/) { functor_called++; }
 };

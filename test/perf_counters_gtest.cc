@@ -109,8 +109,7 @@ TEST(PerfCountersTest, NegativeTest) {
   }
 }
 
-static std::map<std::string, uint64_t> SnapshotAndCombine(
-    PerfCounters& counters) {
+std::map<std::string, uint64_t> SnapshotAndCombine(PerfCounters& counters) {
   PerfCounterValues values(counters.num_counters());
   std::map<std::string, uint64_t> value_map;
 
