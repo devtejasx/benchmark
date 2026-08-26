@@ -552,12 +552,27 @@ information about the machine on which the benchmarks are run.
 Global setup/teardown specific to each benchmark can be done by
 passing a callback to Setup/Teardown:
 
-The setup/teardown callbacks will be invoked once for each benchmark. If the
+The setup/teardown callbacks will be invoked once before and once after every
+run of the benchmark function, always with `state.thread_index() == 0`. If the
 benchmark is multi-threaded (will run in k threads), they will be invoked
-exactly once before each run with k threads.
+exactly once before each run with k threads, not once per thread.
 
 If the benchmark uses different size groups of threads, the above will be true
 for each size group.
+
+A run is not the same thing as a benchmark, so the callbacks generally run more
+than once per registered benchmark. Unless the iteration count is fixed with
+`Iterations()`, the library calls the benchmark function repeatedly while it
+searches for an iteration count that reaches `--benchmark_min_time`, and each of
+those calls is a run of its own. So are each repetition of `Repetitions()`, each
+pass of the warmup phase (`--benchmark_min_warmup_time`), and the extra runs
+performed for a registered `MemoryManager` or `ProfilerManager`. The total is
+therefore not knowable in advance; what is guaranteed is that every run of the
+benchmark function is preceded by exactly one setup call and followed by exactly
+one teardown call.
+
+Setup is consequently the place to establish the state a single run needs, not a
+place to do work that must happen only once for the whole process.
 
 Eg.,
 
@@ -574,10 +589,15 @@ BENCHMARK(BM_func)->Arg(1)->Arg(3)->Threads(16)->Threads(32)->Setup(DoSetup)->Te
 
 ```
 
-In this example, `DoSetup` and `DoTearDown` will be invoked 4 times each,
-specifically, once for each of this family:
+In this example, `DoSetup` and `DoTearDown` bracket the runs of each of this
+family:
  - BM_func_Arg_1_Threads_16, BM_func_Arg_1_Threads_32
  - BM_func_Arg_3_Threads_16, BM_func_Arg_3_Threads_32
+
+Since none of them fixes an iteration count, each is run several times while the
+iteration count is searched for, and the callbacks are invoked around every one
+of those runs — so more than 4 times each in total. Adding `Iterations(n)` to the
+registration is what makes it exactly 4.
 
 <a name="passing-arguments" />
 

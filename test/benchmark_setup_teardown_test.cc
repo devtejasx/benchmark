@@ -129,6 +129,35 @@ BENCHMARK(BM_WithRep)
     ->Setup(DoSetupWithRepetitions)
     ->Iterations(100)
     ->Repetitions(4);
+
+// Testing a benchmark that does not fix its iteration count. Every case above
+// pins one with Iterations(), which is what makes their call counts land on a
+// single setup per benchmark. Without it the runner calls the benchmark
+// function again and again while it searches for an iteration count that
+// reaches --benchmark_min_time, and the callbacks bracket every one of those
+// runs, so the total is larger than one and is not knowable in advance. What
+// holds either way is one setup and one teardown per run.
+namespace iteration_search {
+int setup = 0;
+int teardown = 0;
+int runs = 0;
+}  // namespace iteration_search
+
+void DoSetupWithIterationSearch(const benchmark::State& /*unused*/) {
+  iteration_search::setup++;
+}
+void DoTeardownWithIterationSearch(const benchmark::State& /*unused*/) {
+  iteration_search::teardown++;
+}
+void BM_WithIterationSearch(benchmark::State& state) {
+  iteration_search::runs++;
+  for (auto _ : state) {
+  }
+}
+
+BENCHMARK(BM_WithIterationSearch)
+    ->Setup(DoSetupWithIterationSearch)
+    ->Teardown(DoTeardownWithIterationSearch);
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -158,6 +187,14 @@ int main(int argc, char** argv) {
 
   // Setup is call once for each repetition * num_arg =  4 * 4 = 16.
   assert(repetitions::setup == 16);
+
+  // With no explicit iteration count the benchmark function is run repeatedly
+  // while the iteration count is searched for. The number of runs depends on
+  // the machine, so only the invariant is asserted: one setup and one teardown
+  // around each run, and more than one run.
+  assert(iteration_search::runs > 1);
+  assert(iteration_search::setup == iteration_search::runs);
+  assert(iteration_search::teardown == iteration_search::runs);
 
   return 0;
 }
