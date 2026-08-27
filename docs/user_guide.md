@@ -1222,6 +1222,16 @@ BENCHMARK(BM_MultiThreaded)->ThreadRange(1, 8);
 
 will run `BM_MultiThreaded` with thread counts 1, 2, 4, and 8.
 
+The step between thread counts defaults to a multiplier of 2 and can be changed
+with an optional third parameter. It is independent of `RangeMultiplier`, which
+only applies to argument ranges:
+
+```c++
+BENCHMARK(BM_MultiThreaded)->ThreadRange(1, 9, 3);
+```
+
+will run `BM_MultiThreaded` with thread counts 1, 3, and 9.
+
 If the benchmarked code itself uses threads and you want to compare it to
 single-threaded code, you may want to use real-time ("wallclock") measurements
 for latency comparisons:

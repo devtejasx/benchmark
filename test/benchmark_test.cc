@@ -283,6 +283,31 @@ BENCHMARK(BM_DenseThreadRanges)->Arg(1)->DenseThreadRange(1, 3);
 BENCHMARK(BM_DenseThreadRanges)->Arg(2)->DenseThreadRange(1, 4, 2);
 BENCHMARK(BM_DenseThreadRanges)->Arg(3)->DenseThreadRange(5, 14, 3);
 
+void BM_ThreadRanges(benchmark::State& st) {
+  switch (st.range(0)) {
+    case 1:
+      // Default multiplier, unchanged behaviour.
+      assert(st.threads() == 1 || st.threads() == 2 || st.threads() == 4 ||
+             st.threads() == 8);
+      break;
+    case 2:
+      assert(st.threads() == 1 || st.threads() == 3 || st.threads() == 9);
+      break;
+    case 3:
+      // The multiplier is independent of RangeMultiplier.
+      assert(st.threads() == 2 || st.threads() == 4 || st.threads() == 16 ||
+             st.threads() == 32);
+      break;
+    default:
+      assert(false && "Invalid test case number");
+  }
+  while (st.KeepRunning()) {
+  }
+}
+BENCHMARK(BM_ThreadRanges)->Arg(1)->ThreadRange(1, 8);
+BENCHMARK(BM_ThreadRanges)->Arg(2)->ThreadRange(1, 9, 3);
+BENCHMARK(BM_ThreadRanges)->Arg(3)->RangeMultiplier(8)->ThreadRange(2, 32, 4);
+
 void BM_BenchmarkName(benchmark::State& state) {
   for (auto _ : state) {
   }
