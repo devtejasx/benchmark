@@ -60,11 +60,6 @@ double StatisticsMedian(const std::vector<double>& v) {
   return (*center + *center2) / 2.0;
 }
 
-// Return the sum of the squares of this sample set
-const auto SumSquares = [](const std::vector<double>& v) {
-  return std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
-};
-
 const auto Sqr = [](const double dat) { return dat * dat; };
 const auto Sqrt = [](const double dat) {
   // Avoid NaN due to imprecision in the calculations
@@ -85,11 +80,18 @@ double StatisticsStdDev(const std::vector<double>& v) {
     return 0.0;
   }
 
-  const double avg_squares =
-      SumSquares(v) * (1.0 / static_cast<double>(v.size()));
-  return Sqrt(static_cast<double>(v.size()) /
-              (static_cast<double>(v.size()) - 1.0) *
-              (avg_squares - Sqr(mean)));
+  // Sum the squared deviations from the mean rather than subtracting the
+  // square of the mean from the mean of the squares. Benchmark samples are
+  // large and close together -- repetitions of a one-second benchmark differ
+  // by a few nanoseconds out of 1e9 -- and that subtraction cancels away
+  // every significant digit the variance had.
+  double sum_of_squared_deviations = 0.0;
+  for (const double value : v) {
+    sum_of_squared_deviations += Sqr(value - mean);
+  }
+
+  return Sqrt(sum_of_squared_deviations /
+              (static_cast<double>(v.size()) - 1.0));
 }
 
 double StatisticsCV(const std::vector<double>& v) {
