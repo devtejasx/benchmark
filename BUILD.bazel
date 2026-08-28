@@ -38,6 +38,20 @@ config_setting(
     visibility = [":__subpackages__"],
 )
 
+# src/mutex.h annotates the Mutex wrappers for -Wthread-safety, but the
+# annotations are compiled out unless HAVE_THREAD_SAFETY_ATTRIBUTES is defined,
+# and nothing here defined it. Bazel's autoconfigured toolchain passes
+# -Wthread-safety whenever the compiler accepts it, so the wrappers were
+# analyzed with their own annotations erased: lock() is then seen acquiring
+# mut_ and never releasing it, which is an error wherever the standard library
+# annotates std::mutex itself (#2263). The attributes are a clang feature, so
+# turn them on for clang and leave every other compiler alone.
+THREAD_SAFETY_DEFINES = select({
+    "@rules_cc//cc/compiler:clang": ["HAVE_THREAD_SAFETY_ATTRIBUTES"],
+    "@rules_cc//cc/compiler:clang-cl": ["HAVE_THREAD_SAFETY_ATTRIBUTES"],
+    "//conditions:default": [],
+})
+
 cc_library(
     name = "benchmark",
     srcs = glob(
@@ -87,7 +101,7 @@ cc_library(
         "_FILE_OFFSET_BITS=64",
         "_LARGEFILE64_SOURCE",
         "_LARGEFILE_SOURCE",
-    ],
+    ] + THREAD_SAFETY_DEFINES,
     visibility = ["//visibility:public"],
     deps = select({
         ":perfcounters": ["@libpfm"],
@@ -121,5 +135,8 @@ cc_library(
 cc_library(
     name = "benchmark_internal_headers",
     hdrs = glob(["src/*.h"]),
+    # Propagating, unlike the local_defines above: the tests compile mutex.h
+    # themselves (perf_counters.h includes it) and need the same view of it.
+    defines = THREAD_SAFETY_DEFINES,
     visibility = ["//test:__pkg__"],
 )
