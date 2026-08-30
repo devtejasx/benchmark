@@ -3,6 +3,7 @@
 #include <cinttypes>
 
 #include "string_util.h"
+#include "thread_manager.h"
 
 namespace benchmark {
 namespace internal {
@@ -94,7 +95,13 @@ State BenchmarkInstance::Run(
     internal::ThreadManager* manager,
     internal::PerfCountersMeasurement* perf_counters_measurement,
     ProfilerManager* profiler_manager) const {
-  State st(name_.function_name, iters, args_, thread_id, threads_, timer,
+  // The memory-manager and profiler passes re-run the benchmark body on a
+  // single thread. Report the thread count that is actually running, so that
+  // a body synchronising on State::threads() does not wait for threads that
+  // will never arrive.
+  const int running_threads =
+      manager != nullptr ? manager->num_threads() : threads_;
+  State st(name_.function_name, iters, args_, thread_id, running_threads, timer,
            manager, perf_counters_measurement, profiler_manager);
   benchmark_.Run(st);
   return st;
