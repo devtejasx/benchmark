@@ -68,18 +68,20 @@ std::vector<benchmark::BenchmarkReporter::Run> RunOne(const std::string& name) {
   return reporter.runs();
 }
 
-TEST(Diagnostics, PauseOutsideOfTheLoopIsDiagnosed) {
-#ifndef NDEBUG
-  ASSERT_DEATH_IF_SUPPORTED(RunOne("BM_pause_before_loop"), "PauseTiming");
-  ASSERT_DEATH_IF_SUPPORTED(RunOne("BM_pause_after_loop"), "PauseTiming");
-#endif
+TEST(Diagnostics, PauseBeforeTheLoopIsDiagnosed) {
+  ASSERT_DEBUG_DEATH(RunOne("BM_pause_before_loop"), "PauseTiming");
 }
 
-TEST(Diagnostics, ResumeOutsideOfTheLoopIsDiagnosed) {
-#ifndef NDEBUG
-  ASSERT_DEATH_IF_SUPPORTED(RunOne("BM_resume_before_loop"), "ResumeTiming");
-  ASSERT_DEATH_IF_SUPPORTED(RunOne("BM_resume_after_loop"), "ResumeTiming");
-#endif
+TEST(Diagnostics, PauseAfterTheLoopIsDiagnosed) {
+  ASSERT_DEBUG_DEATH(RunOne("BM_pause_after_loop"), "PauseTiming");
+}
+
+TEST(Diagnostics, ResumeBeforeTheLoopIsDiagnosed) {
+  ASSERT_DEBUG_DEATH(RunOne("BM_resume_before_loop"), "ResumeTiming");
+}
+
+TEST(Diagnostics, ResumeAfterTheLoopIsDiagnosed) {
+  ASSERT_DEBUG_DEATH(RunOne("BM_resume_after_loop"), "ResumeTiming");
 }
 
 TEST(Diagnostics, PauseAndResumeInsideTheLoopReportASaneTime) {
