@@ -8,6 +8,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import unittest
+import unittest.mock
 
 # Input file type enumeration
 IT_Invalid = 0
@@ -164,9 +166,11 @@ def sort_benchmark_results(result):
     )
     benchmarks = sorted(
         benchmarks,
-        key=lambda benchmark: 1
-        if "run_type" in benchmark and benchmark["run_type"] == "aggregate"
-        else 0,
+        key=lambda benchmark: (
+            1
+            if "run_type" in benchmark and benchmark["run_type"] == "aggregate"
+            else 0
+        ),
     )
     benchmarks = sorted(
         benchmarks,
@@ -201,14 +205,18 @@ def run_benchmark(exe_name, benchmark_flags):
 
     cmd = [exe_name, *benchmark_flags]
     print("RUNNING: %s" % " ".join(cmd))
-    exitCode = subprocess.call(cmd)
-    if exitCode != 0:
-        print("TEST FAILED...")
-        sys.exit(exitCode)
-    json_res = load_benchmark_results(output_name, None)
-    if is_temp_output:
-        os.unlink(output_name)
-    return json_res
+    try:
+        exitCode = subprocess.call(cmd)
+        if exitCode != 0:
+            print("TEST FAILED...")
+            sys.exit(exitCode)
+        return load_benchmark_results(output_name, None)
+    finally:
+        # The temporary file is ours, so remove it however we leave: a
+        # failing benchmark exits here, and an unreadable result or an
+        # unlaunchable executable raises.
+        if is_temp_output:
+            os.unlink(output_name)
 
 
 def run_or_load_benchmark(filename, benchmark_flags):
@@ -227,3 +235,74 @@ def run_or_load_benchmark(filename, benchmark_flags):
     if ftype == IT_Executable:
         return run_benchmark(filename, benchmark_flags)
     raise ValueError("Unknown file type %s" % ftype)
+
+
+class TestRunBenchmark(unittest.TestCase):
+    """Cover the temporary --benchmark_out file run_benchmark creates."""
+
+    def setUp(self):
+        self.temp_paths = []
+        real_mkstemp = tempfile.mkstemp
+
+        def recording_mkstemp(*args, **kwargs):
+            handle, path = real_mkstemp(*args, **kwargs)
+            self.temp_paths.append(path)
+            return handle, path
+
+        patcher = unittest.mock.patch.object(
+            tempfile, "mkstemp", recording_mkstemp
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _fake_benchmark(self, exit_code):
+        """Write a python script that behaves like a benchmark executable."""
+        source = (
+            "import json, sys\n"
+            "out = [a for a in sys.argv if a.startswith('--benchmark_out=')]\n"
+            "open(out[0].split('=', 1)[1], 'w').write("
+            "json.dumps({'context': {}, 'benchmarks': []}))\n"
+            "sys.exit(%d)\n" % exit_code
+        )
+        handle, path = tempfile.mkstemp(suffix=".py")
+        with os.fdopen(handle, "w") as f:
+            f.write(source)
+        # Not the file under test; drop it from the recorded list.
+        self.temp_paths.remove(path)
+        self.addCleanup(os.unlink, path)
+        return path
+
+    def test_removes_its_temp_output_on_success(self):
+        script = self._fake_benchmark(exit_code=0)
+
+        result = run_benchmark(sys.executable, [script])
+
+        self.assertEqual(result["benchmarks"], [])
+        self.assertEqual(len(self.temp_paths), 1)
+        self.assertFalse(os.path.exists(self.temp_paths[0]))
+
+    def test_removes_its_temp_output_when_the_benchmark_fails(self):
+        script = self._fake_benchmark(exit_code=3)
+
+        with self.assertRaises(SystemExit) as caught:
+            run_benchmark(sys.executable, [script])
+
+        self.assertEqual(caught.exception.code, 3)
+        self.assertEqual(len(self.temp_paths), 1)
+        self.assertFalse(os.path.exists(self.temp_paths[0]))
+
+    def test_keeps_an_explicitly_requested_output_file(self):
+        script = self._fake_benchmark(exit_code=0)
+        handle, requested = tempfile.mkstemp()
+        os.close(handle)
+        self.temp_paths.remove(requested)
+        self.addCleanup(os.unlink, requested)
+
+        run_benchmark(sys.executable, [script, "--benchmark_out=" + requested])
+
+        self.assertEqual(self.temp_paths, [])
+        self.assertTrue(os.path.exists(requested))
+
+
+if __name__ == "__main__":
+    unittest.main()
