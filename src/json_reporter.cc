@@ -61,7 +61,14 @@ std::string StrEscape(const std::string& s) {
         tmp += "\\\"";
         break;
       default:
-        tmp += c;
+        // JSON forbids an unescaped control character inside a string, and a
+        // benchmark name, label or skip message can hold one.
+        if (static_cast<unsigned char>(c) < 0x20) {
+          tmp += StrFormat("\\u%04x", static_cast<unsigned int>(
+                                          static_cast<unsigned char>(c)));
+        } else {
+          tmp += c;
+        }
         break;
     }
   }

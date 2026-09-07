@@ -1122,6 +1122,21 @@ ADD_CASES(TC_JSONOut, {{"\"name\": \"BM_JSON_Format\",$"},
                        {R"("error_message": "val\\b\\f\\n\\r\\t\\\\\\"with\\"es,capes",$)", MR_Next}});
 #endif
 // ========================================================================= //
+// ------------- Testing JSON escape of a control character ---------------- //
+// ========================================================================= //
+
+void BM_JSON_ControlCharacter(benchmark::State& state) {
+  // an escape sequence in a message, e.g. from a colourising logger
+  state.SkipWithError(
+      "esc\x1b"
+      "here");
+  for (auto _ : state) {
+  }
+}
+BENCHMARK(BM_JSON_ControlCharacter);
+ADD_CASES(TC_JSONOut, {{R"("error_message": "esc\\u001bhere",$)"}});
+
+// ========================================================================= //
 // -------------------------- Testing CsvEscape ---------------------------- //
 // ========================================================================= //
 
