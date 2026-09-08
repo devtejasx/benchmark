@@ -231,6 +231,18 @@ std::unique_ptr<ThreadRunnerBase> GetThreadRunner(
 
 }  // end namespace
 
+// Report a --benchmark_min_time value that cannot be used and stop, the way an
+// unusable --benchmark_format or --benchmark_time_unit does. This must not be a
+// BM_CHECK: those compile away under NDEBUG, which is how the library is built
+// in practice, and the flag would then be silently misread.
+BENCHMARK_NORETURN void MinTimeFlagError(const std::string& value,
+                                         const char* expected) {
+  std::cerr << "Malformed value passed to --benchmark_min_time: `" << value
+            << "`. Expected " << expected << ".\n";
+  std::flush(std::cerr);
+  std::exit(1);
+}
+
 BenchTimeType ParseBenchMinTime(const std::string& value) {
   BenchTimeType ret = {};
 
@@ -247,10 +259,11 @@ BenchTimeType ParseBenchMinTime(const std::string& value) {
     IterationCount num_iters = std::strtol(value.c_str(), &p_end, 10);
 
     // After a valid parse, p_end should have been set to
-    // point to the 'x' suffix.
-    BM_CHECK(errno == 0 && p_end != nullptr && *p_end == 'x')
-        << "Malformed iters value passed to --benchmark_min_time: `" << value
-        << "`. Expected --benchmark_min_time=<integer>x.";
+    // point to the 'x' suffix, and at least one digit must have been read.
+    if (errno != 0 || p_end == nullptr || p_end == value.c_str() ||
+        *p_end != 'x') {
+      MinTimeFlagError(value, "--benchmark_min_time=<integer>x");
+    }
 
     ret.tag = BenchTimeType::ITERS;
     ret.iters = num_iters;
@@ -270,10 +283,10 @@ BenchTimeType ParseBenchMinTime(const std::string& value) {
 
   // After a successful parse, p_end should point to the suffix 's',
   // or the end of the string if the suffix was omitted.
-  BM_CHECK(errno == 0 && p_end != nullptr &&
-           ((has_suffix && *p_end == 's') || *p_end == '\0'))
-      << "Malformed seconds value passed to --benchmark_min_time: `" << value
-      << "`. Expected --benchmark_min_time=<float>x.";
+  if (errno != 0 || p_end == nullptr || p_end == value.c_str() ||
+      !((has_suffix && *p_end == 's') || *p_end == '\0')) {
+    MinTimeFlagError(value, "--benchmark_min_time=<float>s");
+  }
 
   ret.tag = BenchTimeType::TIME;
   ret.time = min_time;
