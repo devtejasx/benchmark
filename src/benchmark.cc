@@ -461,15 +461,15 @@ void RunBenchmarks(const std::vector<BenchmarkInstance>& benchmarks,
     }
     assert(runners.size() == benchmarks.size() && "Unexpected runner count.");
 
-    // The use of performance counters with threads would be unintuitive for
-    // the average user so we need to warn them about this case
+    // Performance counters are measured through one shared object, which
+    // cannot be started and stopped by several threads at once, so they are
+    // not collected for benchmarks that run more than one thread.
     if ((benchmarks_with_threads > 0) && (perfcounters.num_counters() > 0)) {
       GetErrorLogInstance()
           << "***WARNING*** There are " << benchmarks_with_threads
           << " benchmarks with threads and " << perfcounters.num_counters()
-          << " performance counters were requested. Beware counters will "
-             "reflect the combined usage across all "
-             "threads.\n";
+          << " performance counters were requested. Performance counters are "
+             "not reported for benchmarks that use more than one thread.\n";
     }
 
     std::vector<size_t> repetition_indices;

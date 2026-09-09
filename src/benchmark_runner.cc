@@ -312,7 +312,13 @@ BenchmarkRunner::BenchmarkRunner(
                 : (has_explicit_iteration_count
                        ? ComputeIters(b_, parsed_benchtime_flag)
                        : 1)),
-      perf_counters_measurement_ptr(pcm_) {
+      // Perf counters are collected through a single shared
+      // PerfCountersMeasurement, whose start/end snapshot buffers are plain
+      // members. Handing it to every worker thread would have them call
+      // Start()/Stop() on it concurrently, racing on those buffers and pairing
+      // one thread's Stop() with another thread's Start(). Only collect them
+      // when there is a single thread.
+      perf_counters_measurement_ptr(b_.threads() > 1 ? nullptr : pcm_) {
   run_results.display_report_aggregates_only =
       (FLAGS_benchmark_report_aggregates_only ||
        FLAGS_benchmark_display_aggregates_only);
@@ -326,7 +332,7 @@ BenchmarkRunner::BenchmarkRunner(
         ((b.aggregation_report_mode() &
           internal::ARM_FileReportAggregatesOnly) != 0u);
     BM_CHECK(FLAGS_benchmark_perf_counters.empty() ||
-             (perf_counters_measurement_ptr->num_counters() == 0))
+             (pcm_->num_counters() == 0))
         << "Perf counters were requested but could not be set up.";
   }
 }

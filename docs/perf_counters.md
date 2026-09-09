@@ -33,3 +33,8 @@ mapped by libpfm to platform-specifics - see libpfm
 The counter values are reported back through the [User Counters](../README.md#custom-counters)
 mechanism, meaning, they are available in all the formats (e.g. JSON) supported
 by User Counters.
+
+Counters are collected through a single object shared by the whole run, which
+one thread starts and stops around its iterations. They are therefore only
+collected for single-threaded benchmarks; a benchmark registered with
+`Threads()` reports no counters, and the run prints a warning saying so.
