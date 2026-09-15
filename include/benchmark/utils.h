@@ -86,21 +86,19 @@ inline BENCHMARK_ALWAYS_INLINE
 #endif
 }
 
-// Types that cannot be written to are passed as an input operand instead. The
-// memory clobber still forces the object into memory and stops the compiler
-// from assuming it unchanged, so the barrier is not weakened.
+// Types that cannot be written to are passed as an input operand instead.
 template <class Tp>
 inline BENCHMARK_ALWAYS_INLINE
     typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
     DoNotOptimize(Tp& value) {
-  asm volatile("" : : "m"(value) : "memory");
+  asm volatile("" : : "r,m"(value) : "memory");
 }
 
 template <class Tp>
 inline BENCHMARK_ALWAYS_INLINE
     typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
     DoNotOptimize(Tp&& value) {
-  asm volatile("" : : "m"(value) : "memory");
+  asm volatile("" : : "r,m"(value) : "memory");
 }
 #elif (__GNUC__ >= 5)
 template <class Tp>
@@ -157,21 +155,19 @@ inline BENCHMARK_ALWAYS_INLINE
   asm volatile("" : "+m"(value) : : "memory");
 }
 
-// Types that cannot be written to are passed as an input operand instead. The
-// memory clobber still forces the object into memory and stops the compiler
-// from assuming it unchanged, so the barrier is not weakened.
+// Types that cannot be written to are passed as an input operand instead.
 template <class Tp>
 inline BENCHMARK_ALWAYS_INLINE
     typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
     DoNotOptimize(Tp& value) {
-  asm volatile("" : : "m"(value) : "memory");
+  asm volatile("" : : "m,r"(value) : "memory");
 }
 
 template <class Tp>
 inline BENCHMARK_ALWAYS_INLINE
     typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
     DoNotOptimize(Tp&& value) {
-  asm volatile("" : : "m"(value) : "memory");
+  asm volatile("" : : "m,r"(value) : "memory");
 }
 #endif
 
