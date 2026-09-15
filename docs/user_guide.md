@@ -850,6 +850,11 @@ BENCHMARK(BM_StringCompare)->RangeMultiplier(2)
     ->Range(1<<10, 1<<18)->Complexity([](benchmark::IterationCount n)->double{return n; });
 ```
 
+The `BigO` row reports the coefficient in the same time unit as the rest of the
+family, so a family declared with `->Unit(benchmark::kMicrosecond)` reports its
+coefficient in microseconds. The `RMS` row is a normalized quantity and is
+reported as a percentage, independent of the time unit.
+
 <a name="custom-benchmark-name" />
 
 ## Custom Benchmark Name
