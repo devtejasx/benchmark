@@ -165,7 +165,7 @@ TEST(AddCustomContext, DuplicateKey) {
 }
 
 // PauseTiming() and ResumeTiming() assert when called outside the benchmark
-// loop (#2235).
+// loop.
 void BM_pause_before_loop(benchmark::State& state) {
   state.PauseTiming();
   for (auto _ : state) {
