@@ -87,13 +87,8 @@ inline BENCHMARK_ALWAYS_INLINE
 }
 
 // Types that cannot be written to are passed as an input operand instead.
-template <class Tp>
-inline BENCHMARK_ALWAYS_INLINE
-    typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
-    DoNotOptimize(Tp& value) {
-  asm volatile("" : : "r,m"(value) : "memory");
-}
-
+// A forwarding reference covers both lvalues and rvalues here; unlike the
+// read-write overloads above, an input operand needs no separate lvalue form.
 template <class Tp>
 inline BENCHMARK_ALWAYS_INLINE
     typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
@@ -156,18 +151,13 @@ inline BENCHMARK_ALWAYS_INLINE
 }
 
 // Types that cannot be written to are passed as an input operand instead.
-template <class Tp>
-inline BENCHMARK_ALWAYS_INLINE
-    typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
-    DoNotOptimize(Tp& value) {
-  asm volatile("" : : "m,r"(value) : "memory");
-}
-
+// A forwarding reference covers both lvalues and rvalues here; unlike the
+// read-write overloads above, an input operand needs no separate lvalue form.
 template <class Tp>
 inline BENCHMARK_ALWAYS_INLINE
     typename std::enable_if<!internal::IsValidAsmOutput<Tp>::value>::type
     DoNotOptimize(Tp&& value) {
-  asm volatile("" : : "m,r"(value) : "memory");
+  asm volatile("" : : "r,m"(value) : "memory");
 }
 #endif
 
