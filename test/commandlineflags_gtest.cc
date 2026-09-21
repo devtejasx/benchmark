@@ -168,6 +168,34 @@ TEST(Int32FromEnv, ValidInteger) {
   unsetenv("IN_ENV");
 }
 
+TEST(Int32FromEnv, EmptyValueReturnsDefault) {
+  // An empty value is not the integer 0. (On Windows, setting a variable to
+  // the empty string removes it, which gives the same result.)
+  ASSERT_EQ(setenv("IN_ENV", "", 1), 0);
+  EXPECT_EQ(Int32FromEnv("in_env", 42), 42);
+  unsetenv("IN_ENV");
+}
+
+TEST(Int32FromEnv, Int32Limits) {
+  ASSERT_EQ(setenv("IN_ENV", "2147483647", 1), 0);
+  EXPECT_EQ(Int32FromEnv("in_env", 42), 2147483647);
+  ASSERT_EQ(setenv("IN_ENV", "-2147483648", 1), 0);
+  EXPECT_EQ(Int32FromEnv("in_env", 42), -2147483647 - 1);
+  ASSERT_EQ(setenv("IN_ENV", "2147483648", 1), 0);
+  EXPECT_EQ(Int32FromEnv("in_env", 42), 42);
+  ASSERT_EQ(setenv("IN_ENV", "-2147483649", 1), 0);
+  EXPECT_EQ(Int32FromEnv("in_env", 42), 42);
+  ASSERT_EQ(setenv("IN_ENV", "99999999999999999999", 1), 0);
+  EXPECT_EQ(Int32FromEnv("in_env", 42), 42);
+  unsetenv("IN_ENV");
+}
+
+TEST(DoubleFromEnv, EmptyValueReturnsDefault) {
+  ASSERT_EQ(setenv("IN_ENV", "", 1), 0);
+  EXPECT_EQ(DoubleFromEnv("in_env", 0.51), 0.51);
+  unsetenv("IN_ENV");
+}
+
 TEST(DoubleFromEnv, NotInEnv) {
   ASSERT_EQ(unsetenv("NOT_IN_ENV"), 0);
   EXPECT_EQ(DoubleFromEnv("not_in_env", 0.51), 0.51);
@@ -222,6 +250,27 @@ TEST(KvPairsFromEnv, Multiple) {
               testing::UnorderedElementsAre(testing::Pair("foo", "bar"),
                                             testing::Pair("baz", "qux")));
   unsetenv("IN_ENV");
+}
+
+TEST(ParseInt32Flag, EmptyValueIsRejected) {
+  int32_t value = 42;
+  EXPECT_FALSE(ParseInt32Flag(
+      "--benchmark_repetitions=", "benchmark_repetitions", &value));
+  EXPECT_EQ(value, 42);
+}
+
+TEST(ParseInt32Flag, AcceptsInt32Max) {
+  int32_t value = 42;
+  EXPECT_TRUE(ParseInt32Flag("--benchmark_repetitions=2147483647",
+                             "benchmark_repetitions", &value));
+  EXPECT_EQ(value, 2147483647);
+}
+
+TEST(ParseDoubleFlag, EmptyValueIsRejected) {
+  double value = 0.5;
+  EXPECT_FALSE(ParseDoubleFlag(
+      "--benchmark_min_warmup_time=", "benchmark_min_warmup_time", &value));
+  EXPECT_EQ(value, 0.5);
 }
 
 }  // namespace

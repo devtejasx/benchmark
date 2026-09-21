@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -34,11 +35,12 @@ namespace {
 bool ParseInt32(const std::string& src_text, const char* str, int32_t* value) {
   // Parses the environment variable as a decimal integer.
   char* end = nullptr;
+  errno = 0;
   const long long_value = strtol(str, &end, 10);  // NOLINT
 
-  // Has strtol() consumed all characters in the string?
-  if (*end != '\0') {
-    // No - an invalid character was encountered.
+  // Has strtol() consumed all characters in the string, and at least one?
+  if (end == str || *end != '\0') {
+    // No - the string is empty or an invalid character was encountered.
     std::cerr << src_text << " is expected to be a 32-bit integer, "
               << "but actually has value \"" << str << "\".\n";
     return false;
@@ -46,10 +48,10 @@ bool ParseInt32(const std::string& src_text, const char* str, int32_t* value) {
 
   // Is the parsed value in the range of an Int32?
   const int32_t result = static_cast<int32_t>(long_value);
-  if (long_value == std::numeric_limits<long>::max() ||
-      long_value == std::numeric_limits<long>::min() ||
-      // The parsed value overflows as a long.  (strtol() returns
-      // LONG_MAX or LONG_MIN when the input overflows.)
+  if (errno == ERANGE ||
+      // The parsed value overflows as a long. strtol() reports this with
+      // ERANGE; LONG_MAX itself is a valid result, and where long is 32 bits
+      // it is also INT32_MAX.
       result != long_value
       // The parsed value overflows as an Int32.
   ) {
@@ -70,9 +72,9 @@ bool ParseDouble(const std::string& src_text, const char* str, double* value) {
   char* end = nullptr;
   const double double_value = strtod(str, &end);  // NOLINT
 
-  // Has strtol() consumed all characters in the string?
-  if (*end != '\0') {
-    // No - an invalid character was encountered.
+  // Has strtod() consumed all characters in the string, and at least one?
+  if (end == str || *end != '\0') {
+    // No - the string is empty or an invalid character was encountered.
     std::cerr << src_text << " is expected to be a double, "
               << "but actually has value \"" << str << "\".\n";
     return false;
