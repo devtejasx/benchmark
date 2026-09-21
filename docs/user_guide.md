@@ -1347,6 +1347,11 @@ BENCHMARK(BM_SetInsert_With_Timer_Control)->Ranges({{1<<10, 8<<10}, {128, 512}})
 ```
 <!-- {% endraw %} -->
 
+Note that you can only pause the timing if the timer is actually running,
+and likewise, you can only resume the timing only if the timer is paused.
+Such invalid pause/resume calls are diagnosed if the
+user code is built without `NDEBUG`.
+
 For convenience, a `ScopedPauseTiming` class is provided to manage pausing and
 resuming timers within a scope. This is less error-prone than manually calling
 `PauseTiming` and `ResumeTiming`.
