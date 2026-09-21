@@ -78,9 +78,8 @@ void CSVReporter::ReportRuns(const std::vector<Run>& reports) {
         Out << ",";
       }
     }
-    for (auto B = user_counter_names_.begin();
-         B != user_counter_names_.end();) {
-      Out << ",\"" << *B++ << "\"";
+    for (const auto& name : user_counter_names_) {
+      Out << "," << CsvEscape(name);
     }
     Out << "\n";
 
@@ -115,7 +114,9 @@ void CSVReporter::PrintRunData(const Run& run) {
   if (run.skipped != 0u) {
     Out << std::string(elements.size() - 3, ',');
     Out << std::boolalpha << (internal::SkippedWithError == run.skipped) << ",";
-    Out << CsvEscape(run.skip_message) << "\n";
+    Out << CsvEscape(run.skip_message);
+    // Keep the row as wide as the header: one empty field per user counter.
+    Out << std::string(user_counter_names_.size(), ',') << "\n";
     return;
   }
 

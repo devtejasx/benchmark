@@ -588,6 +588,20 @@ CHECK_BENCHMARK_RESULTS("BM_Counters_kAvgIterationsRate",
 }  // end namespace
 
 // ========================================================================= //
+// ------------------------- Skipped Benchmark Output ---------------------- //
+// ========================================================================= //
+
+void BM_Counters_Skipped(benchmark::State& state) {
+  state.SkipWithError("skipped");
+  for (auto _ : state) {
+  }
+}
+BENCHMARK(BM_Counters_Skipped);
+// The row for a skipped benchmark has one empty field per user counter in the
+// header ("bar" and "foo"), like every other row.
+ADD_CASES(TC_CSVOut, {{"^\"BM_Counters_Skipped\",,,,,,,,true,\"skipped\",,$"}});
+
+// ========================================================================= //
 // --------------------------- TEST CASES END ------------------------------ //
 // ========================================================================= //
 
