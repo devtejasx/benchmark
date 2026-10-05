@@ -177,7 +177,10 @@ std::vector<BenchmarkReporter::Run> ComputeBigO(
 
   // Populate the accumulators.
   for (const Run& run : reports) {
-    BM_CHECK_GT(run.complexity_n, 0)
+    // Checked in every build: without it a release build fits the curve to
+    // N == 0 and reports "nan N", or a confident but meaningless "(1)" for
+    // oAuto. This runs once per benchmark family, outside the timed loop.
+    BM_CHECK_ALWAYS(run.complexity_n > 0)
         << "Did you forget to call SetComplexityN?";
     n.push_back(run.complexity_n);
     real_time.push_back(run.real_accumulated_time /
