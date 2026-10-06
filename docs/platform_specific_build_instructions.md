@@ -15,9 +15,30 @@ On QNX, the pthread library is part of libc and usually included automatically
 [`pthread_create()`](https://www.qnx.com/developers/docs/7.1/index.html#com.qnx.doc.neutrino.lib_ref/topic/p/pthread_create.html)).
 There's no separate pthread library to link.
 
-## Building with Visual Studio 2015, 2017 or 2022
+## Building on Windows
 
-The `shlwapi` library (`-lshlwapi`) is required to support a call to `CPUInfo` which reads the registry. Either add `shlwapi.lib` under `[ Configuration Properties > Linker > Input ]`, or use the following:
+The notes in this section apply to every Windows toolchain, not only to Visual
+Studio:
+
+* The `shlwapi` library is required to support a call to `CPUInfo` which reads
+  the registry.
+* When linking against the static library without going through CMake's
+  `benchmark::benchmark` target, `BENCHMARK_STATIC_DEFINE` must be defined.
+  Without it the headers declare every symbol as imported from a DLL, and the
+  link fails with `undefined reference to __imp_...` errors.
+
+### MinGW-w64 (MSYS2) and Clang
+
+Add both to the compile command from the README:
+
+```
+$ g++ mybenchmark.cc -std=c++17 -DBENCHMARK_STATIC_DEFINE -isystem benchmark/include \
+  -Lbenchmark/build/src -lbenchmark -lpthread -lshlwapi -o mybenchmark
+```
+
+### Visual Studio 2015, 2017 or 2022
+
+Either add `shlwapi.lib` under `[ Configuration Properties > Linker > Input ]`, or use the following:
 
 ```
 // Alternatively, can add libraries using linker options.

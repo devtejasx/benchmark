@@ -193,6 +193,10 @@ $ g++ mybenchmark.cc -std=c++11 -isystem benchmark/include \
   -Lbenchmark/build/src -lbenchmark -lpthread -o mybenchmark
 ```
 
+On Windows, including MinGW-w64, this also needs `-DBENCHMARK_STATIC_DEFINE`
+and `-lshlwapi`; see
+[Building on Windows](docs/platform_specific_build_instructions.md#building-on-windows).
+
 Alternatively, link against the `benchmark_main` library and remove
 `BENCHMARK_MAIN();` above to get the same behavior.
 
