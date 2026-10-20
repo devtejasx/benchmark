@@ -48,7 +48,7 @@ def is_json_file(filename):
     'False' otherwise.
     """
     try:
-        with open(filename) as f:
+        with open(filename, encoding="utf-8") as f:
             json.load(f)
         return True
     except BaseException:
@@ -137,7 +137,8 @@ def load_benchmark_results(fname, benchmark_filter):
         name = benchmark.get("run_name", None) or benchmark["name"]
         return re.search(benchmark_filter, name) is not None
 
-    with open(fname) as f:
+    # The benchmark library writes UTF-8, whatever the platform's locale is.
+    with open(fname, encoding="utf-8") as f:
         results = json.load(f)
         if "json_schema_version" in results.get("context", {}):
             json_schema_version = results["context"]["json_schema_version"]
