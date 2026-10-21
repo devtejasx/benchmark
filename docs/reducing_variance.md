@@ -77,7 +77,7 @@ please refer to their documentation.
 ## Reducing Variance in Benchmarks
 
 The Linux CPU frequency governor [discussed
-above](user_guide#disabling-cpu-frequency-scaling) is not the only source
+above](#disabling-cpu-frequency-scaling) is not the only source
 of noise in benchmarks.  Some, but not all, of the sources of variance
 include:
 
@@ -104,7 +104,7 @@ Some of the easier and effective ways of reducing variance on a typical
 Linux workstation are:
 
 1. Use the performance governor as [discussed
-above](user_guide#disabling-cpu-frequency-scaling).
+above](#disabling-cpu-frequency-scaling).
 2. Disable processor boosting by:
    ```sh
    echo 0 | sudo tee /sys/devices/system/cpu/cpufreq/boost
