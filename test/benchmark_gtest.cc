@@ -157,7 +157,11 @@ TEST(AddCustomContext, DuplicateKey) {
   EXPECT_THAT(global_context, nullptr);
 
   AddCustomContext("foo", "bar");
+  testing::internal::CaptureStderr();
   AddCustomContext("foo", "qux");
+  EXPECT_EQ(testing::internal::GetCapturedStderr(),
+            "Failed to add custom context \"foo\" as it already exists with "
+            "value \"bar\"\n");
 
   EXPECT_THAT(*global_context,
               testing::UnorderedElementsAre(testing::Pair("foo", "bar")));

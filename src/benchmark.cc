@@ -694,10 +694,14 @@ void AddCustomContext(std::string key, std::string value) {
   if (internal::global_context == nullptr) {
     internal::global_context = new std::map<std::string, std::string>();
   }
-  if (!internal::global_context->emplace(std::move(key), std::move(value))
-           .second) {
-    std::cerr << "Failed to add custom context \"" << key << "\" as it already "
-              << "exists with value \"" << value << "\"\n";
+  // Unlike emplace, try_emplace leaves its arguments alone when the key
+  // already exists.
+  auto result =
+      internal::global_context->try_emplace(std::move(key), std::move(value));
+  if (!result.second) {
+    std::cerr << "Failed to add custom context \"" << result.first->first
+              << "\" as it already exists with value \"" << result.first->second
+              << "\"\n";
   }
 }
 
