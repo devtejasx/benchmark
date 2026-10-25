@@ -106,7 +106,11 @@ def filter_benchmark(json_orig, family, replacement=""):
         if not regex.search(be["name"]):
             continue
         filteredbench = copy.deepcopy(be)  # Do NOT modify the old name!
-        filteredbench["name"] = regex.sub(replacement, filteredbench["name"])
+        # A function replacement is used literally; the replacement string is
+        # built from user regexes and may contain backslashes.
+        filteredbench["name"] = regex.sub(
+            lambda _: replacement, filteredbench["name"]
+        )
         filtered["benchmarks"].append(filteredbench)
     return filtered
 
@@ -498,6 +502,16 @@ class TestGetUniqueBenchmarkNames(unittest.TestCase):
         self.assertEqual(len(output_lines), len(expect_lines))
         for i, output_line in enumerate(output_lines):
             self.assertEqual(expect_lines[i], output_line)
+
+
+class TestFilterBenchmark(unittest.TestCase):
+    def test_replacement_is_literal(self):
+        json = {"benchmarks": [{"name": "BM_memcpy/8"}, {"name": "BM_copy/8"}]}
+        replacement = r"[BM_memcpy/\d+ vs. BM_copy/\d+]"
+        filtered = filter_benchmark(json, r"BM_memcpy/\d+", replacement)
+        self.assertEqual(
+            [b["name"] for b in filtered["benchmarks"]], [replacement]
+        )
 
 
 class TestReportDifference(unittest.TestCase):
